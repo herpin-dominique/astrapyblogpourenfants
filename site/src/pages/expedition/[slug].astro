@@ -1,0 +1,250 @@
+---
+import Base from '../../layouts/Base.astro';
+import Etape from '../../components/Etape.astro';
+import Billet from '../../components/Billet.astro';
+import { listerExpeditions, trouverExpedition, AGES, AMBIANCES, urlMedia } from '../../lib/strapi.js';
+
+// Une page par expédition publiée
+export async function getStaticPaths() {
+  const expeditions = await listerExpeditions().catch(() => []);
+  return expeditions.map((e) => ({ params: { slug: e.slug } }));
+}
+
+const expedition = await trouverExpedition(Astro.params.slug);
+if (!expedition) return Astro.redirect('/');
+
+const { titre, accroche, ambiance, age, tempsDeLecture, etapes = [], monde, guide } = expedition;
+const couverture = urlMedia(expedition.couverture);
+const narration = urlMedia(expedition.narration);
+const avatar = urlMedia(guide?.avatar);
+
+// D'autres expéditions dans le même monde, pour continuer le voyage
+const voisines = monde
+  ? (await listerExpeditions({ 'filters[monde][slug][$eq]': monde.slug }).catch(() => []))
+      .filter((e) => e.slug !== expedition.slug)
+      .slice(0, 2)
+  : [];
+---
+
+<Base titre={titre} description={accroche} ambiance={ambiance}>
+  <article>
+    <header class="ouverture">
+      <div class="conteneur grille">
+        <div>
+          {monde && (
+            <p class="monde">
+              <a href={`/monde/${monde.slug}`}>{monde.emoji} {monde.nom}</a>
+            </p>
+          )}
+          <h1>{titre}</h1>
+          <p class="accroche">{accroche}</p>
+          <ul class="infos">
+            <li>{AGES[age]}</li>
+            {tempsDeLecture && <li>{tempsDeLecture} min de lecture</li>}
+            <li>{etapes.length} étape{etapes.length > 1 ? 's' : ''}</li>
+            <li>Ambiance {AMBIANCES[ambiance]?.toLowerCase()}</li>
+          </ul>
+        </div>
+        {couverture && <img class="couverture" src={couverture} alt="" />}
+      </div>
+    </header>
+
+    <div class="lecture">
+      {
+        guide && (
+          <aside class="guide">
+            {avatar && <img src={avatar} alt="" width="64" height="64" />}
+            <p>
+              <strong>Ton guide : {guide.nom}</strong>
+              {guide.devise && <span>« {guide.devise} »</span>}
+            </p>
+          </aside>
+        )
+      }
+
+      {
+        narration && (
+          <div class="ecoute">
+            <p>
+              <strong>Tu préfères écouter&nbsp;?</strong>
+            </p>
+            <audio controls preload="none" src={narration}>
+              Ton navigateur ne sait pas lire ce fichier audio.
+            </audio>
+          </div>
+        )
+      }
+
+      <ol class="sentier">
+        {etapes.map((etape, i) => <Etape etape={etape} numero={i + 1} />)}
+        <li class="arrivee">
+          <span class="drapeau" aria-hidden="true">⚑</span>
+          <p>Expédition terminée, bravo&nbsp;!</p>
+        </li>
+      </ol>
+    </div>
+
+    {
+      voisines.length > 0 && (
+        <section class="conteneur suite">
+          <h2>Encore un peu de route dans {monde.nom}&nbsp;?</h2>
+          <ul class="billets">
+            {voisines.map((e) => <Billet expedition={e} />)}
+          </ul>
+        </section>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  .ouverture {
+    background: var(--accent);
+    color: var(--sur-accent);
+    padding-block: 2.5rem 3.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .grille {
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  @media (min-width: 52rem) {
+    .grille:has(.couverture) {
+      grid-template-columns: 1.3fr 1fr;
+    }
+  }
+
+  .monde {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 {
+    font-size: var(--t-4);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .accroche {
+    max-width: 34rem;
+    margin-top: 1rem;
+    font-size: var(--t-1);
+    line-height: 1.45;
+  }
+
+  .infos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .infos li {
+    padding: 0.2rem 0.8rem;
+    border: 2px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .couverture {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 4px solid var(--sur-accent);
+  }
+
+  .guide {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .guide img {
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent);
+  }
+
+  .guide p {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+  }
+
+  .guide span {
+    color: var(--encre-douce);
+    font-style: italic;
+  }
+
+  .ecoute {
+    margin-bottom: 3rem;
+    padding: 1rem 1.25rem;
+    background: var(--papier-fonce);
+    border-radius: 14px;
+  }
+
+  .ecoute p {
+    margin-bottom: 0.5rem;
+  }
+
+  .ecoute audio {
+    width: 100%;
+  }
+
+  .sentier {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .arrivee {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--titre);
+    font-weight: 800;
+    font-size: var(--t-2);
+  }
+
+  .arrivee p {
+    margin: 0;
+  }
+
+  .drapeau {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--encre);
+    color: var(--papier);
+    font-size: 1.4rem;
+  }
+
+  .suite {
+    margin-top: 5rem;
+  }
+
+  .suite h2 {
+    font-size: var(--t-2);
+    margin-bottom: 1.25rem;
+  }
+
+  .billets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+</style>

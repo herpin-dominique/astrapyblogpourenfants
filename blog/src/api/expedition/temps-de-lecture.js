@@ -48,18 +48,19 @@ const estimerTempsDeLecture = (nombreDeMots, age) => {
   return Math.max(1, Math.ceil(nombreDeMots / vitesse));
 };
 
-const calculer = (event) => {
-  const { data } = event.params;
-  // À la mise à jour, Strapi n'envoie que les champs modifiés : on ne recalcule
-  // que si les étapes font partie de la modification.
-  if (!data || !Array.isArray(data.etapes)) return;
-
-  const nombreDeMots = texteDesEtapes(data.etapes).split(/\s+/).filter(Boolean).length;
-  const minutes = estimerTempsDeLecture(nombreDeMots, data.age);
-  if (minutes !== null) data.tempsDeLecture = minutes;
+// Middleware du document service (branché dans src/index.js). Contrairement à un
+// lifecycle "beforeCreate", il voit le texte des étapes : à ce stade Strapi ne
+// les a pas encore remplacées par de simples identifiants.
+const calculerTempsDeLecture = async (context, next) => {
+  const { uid, action, params } = context;
+  const data = params?.data;
+  // À la mise à jour, on ne recalcule que si les étapes font partie de la modification.
+  if (uid === 'api::expedition.expedition' && ['create', 'update'].includes(action) && Array.isArray(data?.etapes)) {
+    const nombreDeMots = texteDesEtapes(data.etapes).split(/\s+/).filter(Boolean).length;
+    const minutes = estimerTempsDeLecture(nombreDeMots, data.age);
+    if (minutes !== null) data.tempsDeLecture = minutes;
+  }
+  return next();
 };
 
-module.exports = {
-  beforeCreate: calculer,
-  beforeUpdate: calculer,
-};
+module.exports = { calculerTempsDeLecture };

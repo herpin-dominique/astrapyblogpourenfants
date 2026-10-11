@@ -1,0 +1,80 @@
+---
+import Base from '../../layouts/Base.astro';
+import Billet from '../../components/Billet.astro';
+import { listerExpeditions, listerMondes, trouverMonde } from '../../lib/strapi.js';
+
+// Une page par monde
+export async function getStaticPaths() {
+  const mondes = await listerMondes().catch(() => []);
+  return mondes.map((m) => ({ params: { slug: m.slug } }));
+}
+
+const monde = await trouverMonde(Astro.params.slug);
+if (!monde) return Astro.redirect('/');
+
+const expeditions = await listerExpeditions({ 'filters[monde][slug][$eq]': monde.slug });
+---
+
+<Base titre={monde.nom} description={monde.description}>
+  <section class="conteneur entree" style={monde.couleur ? `--pastille: ${monde.couleur}` : undefined}>
+    <p class="emoji" aria-hidden="true">{monde.emoji}</p>
+    <h1>{monde.nom}</h1>
+    {monde.description && <p class="description">{monde.description}</p>}
+  </section>
+
+  <section class="conteneur">
+    {
+      expeditions.length === 0 ? (
+        <p>Aucune expédition publiée dans ce monde pour l’instant.</p>
+      ) : (
+        <ul class="billets">
+          {expeditions.map((e) => (
+            <Billet expedition={e} />
+          ))}
+        </ul>
+      )
+    }
+    <p class="retour"><a href="/">Voir tous les mondes</a></p>
+  </section>
+</Base>
+
+<style>
+  .entree {
+    padding-block: 2rem 3rem;
+    border-left: 12px solid var(--pastille, var(--encre));
+    padding-left: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .emoji {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: var(--t-4);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .description {
+    max-width: 36rem;
+    margin-top: 1rem;
+    font-size: var(--t-1);
+  }
+
+  .billets {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .retour {
+    margin-top: 2.5rem;
+    font-weight: 700;
+  }
+</style>

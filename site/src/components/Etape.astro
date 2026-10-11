@@ -1,0 +1,321 @@
+---
+// Une étape de l'expédition : choisit l'affichage selon le type de composant Strapi
+import Blocs from './Blocs.astro';
+import { urlMedia } from '../lib/strapi.js';
+
+const { etape, numero } = Astro.props;
+const type = etape.__component;
+
+const NOMS = {
+  'etape.recit': 'Récit',
+  'etape.devinette': 'Devinette',
+  'etape.mot-magique': 'Mot magique',
+  'etape.mini-quiz': 'Quiz',
+  'etape.defi': 'Défi',
+  'etape.illustration': 'Illustration',
+};
+---
+
+<li class="etape" data-type={type}>
+  <span class="borne" aria-hidden="true">{numero}</span>
+  <p class="nature"><span class="visuellement-cache">Étape {numero} : </span>{NOMS[type] ?? 'Étape'}</p>
+
+  {
+    type === 'etape.recit' && (
+      <div class="recit">
+        <Blocs noeuds={etape.texte} />
+      </div>
+    )
+  }
+
+  {
+    type === 'etape.devinette' && (
+      <div class="devinette">
+        <p class="question">{etape.question}</p>
+        {etape.indice && (
+          <details class="indice">
+            <summary>Un indice ?</summary>
+            <p>{etape.indice}</p>
+          </details>
+        )}
+        <details class="reponse">
+          <summary>Voir la réponse</summary>
+          <p>{etape.reponse}</p>
+        </details>
+      </div>
+    )
+  }
+
+  {
+    type === 'etape.mot-magique' && (
+      <dl class="mot-magique">
+        <dt>{etape.mot}</dt>
+        <dd>{etape.definition}</dd>
+        {etape.exemple && <dd class="exemple">« {etape.exemple} »</dd>}
+      </dl>
+    )
+  }
+
+  {
+    type === 'etape.mini-quiz' && (
+      <div class="quiz" data-quiz>
+        <p class="question" id={`quiz-${numero}`}>{etape.question}</p>
+        <div class="choix" role="group" aria-labelledby={`quiz-${numero}`}>
+          {(etape.choix ?? []).map((c) => (
+            <button type="button" data-bon={c.estLaBonneReponse ? 'oui' : 'non'}>
+              {c.texte}
+            </button>
+          ))}
+        </div>
+        <p class="verdict" aria-live="polite" />
+        {etape.explication && (
+          <p class="explication" hidden>
+            {etape.explication}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  {
+    type === 'etape.defi' && (
+      <div class="defi">
+        <h3>{etape.titre}</h3>
+        {etape.avecUnAdulte && <p class="adulte">À faire avec un adulte</p>}
+        <Blocs noeuds={etape.consigne} />
+        {etape.materiel && (
+          <p class="materiel">
+            <strong>Il te faut :</strong> {etape.materiel}
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  {
+    type === 'etape.illustration' && etape.image && (
+      <figure class="illustration">
+        <img src={urlMedia(etape.image)} alt={etape.texteAlternatif} loading="lazy" />
+        {etape.legende && <figcaption>{etape.legende}</figcaption>}
+      </figure>
+    )
+  }
+</li>
+
+<script>
+  // Mini-quiz : on colore la réponse choisie et on montre l'explication
+  for (const quiz of document.querySelectorAll('[data-quiz]')) {
+    const verdict = quiz.querySelector('.verdict');
+    const explication = quiz.querySelector('.explication');
+    quiz.addEventListener('click', (e) => {
+      const bouton = e.target.closest('button');
+      if (!bouton) return;
+      const bon = bouton.dataset.bon === 'oui';
+      for (const b of quiz.querySelectorAll('button')) b.removeAttribute('data-etat');
+      bouton.dataset.etat = bon ? 'bon' : 'rate';
+      verdict.textContent = bon ? 'Bravo, c’est la bonne réponse !' : 'Pas tout à fait… essaie encore !';
+      if (explication && bon) explication.hidden = false;
+    });
+  }
+</script>
+
+<style>
+  .etape {
+    position: relative;
+    padding: 0 0 3.5rem 4rem;
+  }
+
+  /* Le chemin en pointillés qui relie les étapes */
+  .etape::before {
+    content: '';
+    position: absolute;
+    left: 1.2rem;
+    top: 2.6rem;
+    bottom: 0.2rem;
+    border-left: 4px dashed var(--accent);
+    opacity: 0.55;
+  }
+
+  .borne {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--sur-accent);
+    font-family: var(--titre);
+    font-weight: 800;
+    font-size: var(--t-1);
+    box-shadow: 0 0 0 5px var(--papier);
+  }
+
+  .nature {
+    font-family: var(--titre);
+    font-weight: 500;
+    color: var(--encre-douce);
+    margin: 0.45rem 0 0.75rem;
+  }
+
+  .question {
+    font-family: var(--titre);
+    font-weight: 800;
+    font-size: var(--t-2);
+    line-height: 1.2;
+  }
+
+  /* Devinette */
+  details {
+    margin-top: 0.75rem;
+  }
+
+  summary {
+    display: inline-block;
+    cursor: pointer;
+    padding: 0.55rem 1.1rem;
+    border: 2px solid var(--encre);
+    border-radius: 999px;
+    font-weight: 700;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .reponse summary {
+    background: var(--encre);
+    color: var(--papier);
+  }
+
+  details[open] summary {
+    opacity: 0.5;
+  }
+
+  details p {
+    margin-top: 0.75rem;
+    font-size: var(--t-1);
+  }
+
+  /* Mot magique : une étiquette de spécimen */
+  .mot-magique {
+    margin: 0;
+    padding: 1.25rem 1.5rem;
+    border: 2px solid var(--encre);
+    border-radius: 4px 18px 4px 18px;
+    background: #fff;
+  }
+
+  .mot-magique dt {
+    font-family: var(--titre);
+    font-weight: 800;
+    font-size: var(--t-3);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .mot-magique dd {
+    margin: 0;
+  }
+
+  .mot-magique .exemple {
+    margin-top: 0.5rem;
+    color: var(--encre-douce);
+    font-style: italic;
+  }
+
+  /* Quiz */
+  .choix {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+
+  .choix button {
+    font: inherit;
+    text-align: left;
+    padding: 0.8rem 1.1rem;
+    border: 2px solid var(--encre);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--encre);
+    cursor: pointer;
+  }
+
+  .choix button:hover {
+    background: var(--papier-fonce);
+  }
+
+  .choix button[data-etat='bon'] {
+    background: #2f7d6d;
+    border-color: #2f7d6d;
+    color: #fff;
+  }
+
+  .choix button[data-etat='rate'] {
+    background: var(--papier-fonce);
+    text-decoration: line-through;
+  }
+
+  .verdict {
+    min-height: 1.6em;
+    margin-top: 0.75rem;
+    font-weight: 700;
+  }
+
+  /* Défi : un billet de mission avec sa perforation */
+  .defi {
+    position: relative;
+    padding: 1.5rem 1.5rem 1.25rem;
+    background: var(--accent);
+    color: var(--sur-accent);
+    border-radius: 14px;
+    mask: radial-gradient(circle 0.75rem at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle 0.75rem at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+  }
+
+  .defi h3 {
+    font-size: var(--t-2);
+    margin-bottom: 0.75rem;
+  }
+
+  .adulte {
+    display: inline-block;
+    padding: 0.15rem 0.7rem;
+    border: 2px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .materiel {
+    margin: 1rem 0 0;
+    padding-top: 0.9rem;
+    border-top: 2px dashed currentColor;
+  }
+
+  /* Illustration */
+  .illustration {
+    margin: 0;
+  }
+
+  .illustration img {
+    border-radius: 14px;
+  }
+
+  .illustration figcaption {
+    margin-top: 0.5rem;
+    color: var(--encre-douce);
+    font-size: 1rem;
+  }
+
+  .recit :global(blockquote) {
+    margin: 1rem 0;
+    padding-left: 1rem;
+    border-left: 4px solid var(--accent);
+    font-style: italic;
+  }
+</style>

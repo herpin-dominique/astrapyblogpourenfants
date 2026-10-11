@@ -1,0 +1,111 @@
+---
+// Une expédition présentée comme un billet de voyage
+import { AGES, urlMedia } from '../lib/strapi.js';
+
+const { expedition } = Astro.props;
+const image = urlMedia(expedition.couverture);
+---
+
+<li class="billet" data-ambiance={expedition.ambiance}>
+  <div class="talon" aria-hidden="true">
+    {image ? <img src={image} alt="" loading="lazy" /> : <span class="emoji">{expedition.monde?.emoji ?? '🧭'}</span>}
+  </div>
+  <div class="corps">
+    <h3><a href={`/expedition/${expedition.slug}`}>{expedition.titre}</a></h3>
+    <p class="accroche">{expedition.accroche}</p>
+    <p class="infos">
+      {expedition.monde && <span>{expedition.monde.emoji} {expedition.monde.nom}</span>}
+      <span>{AGES[expedition.age]}</span>
+      {expedition.tempsDeLecture && <span>{expedition.tempsDeLecture} min</span>}
+    </p>
+  </div>
+</li>
+
+<style>
+  .billet {
+    position: relative;
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    background: #fff;
+    border: 2px solid var(--encre);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .billet:focus-within {
+    outline: 3px solid var(--encre);
+    outline-offset: 3px;
+  }
+
+  .talon {
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    border-right: 3px dashed var(--papier);
+  }
+
+  .talon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .emoji {
+    font-size: 3rem;
+  }
+
+  .corps {
+    padding: 1.1rem 1.25rem 1rem;
+  }
+
+  h3 {
+    font-size: var(--t-1);
+    margin-bottom: 0.4rem;
+  }
+
+  /* Tout le billet est cliquable, mais le lien reste le titre */
+  h3 a {
+    text-decoration: none;
+  }
+
+  h3 a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  h3 a:focus-visible {
+    outline: none;
+  }
+
+  .billet:hover h3 a {
+    text-decoration: underline;
+    text-decoration-thickness: 3px;
+    text-decoration-color: var(--accent);
+  }
+
+  .accroche {
+    color: var(--encre-douce);
+    margin-bottom: 0.6rem;
+  }
+
+  .infos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .infos span {
+    padding: 0.1rem 0.6rem;
+    background: var(--papier);
+    border-radius: 999px;
+  }
+
+  @media (max-width: 30rem) {
+    .billet {
+      grid-template-columns: 5rem 1fr;
+    }
+  }
+</style>

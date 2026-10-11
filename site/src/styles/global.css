@@ -1,0 +1,105 @@
+:root {
+  --papier: #f1f5f2;
+  --papier-fonce: #e1e9e4;
+  --encre: #1b2340;
+  --encre-douce: #4a5470;
+  --trait: #b9c6c0;
+
+  /* Couleur d'accent par défaut, remplacée par l'ambiance de l'expédition */
+  --accent: #2f7d6d;
+  --sur-accent: #ffffff;
+
+  --titre: 'Bricolage Grotesque', system-ui, sans-serif;
+  --texte: 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  /* Échelle typographique : rapport 1,25 */
+  --t-0: 1.125rem;
+  --t-1: 1.406rem;
+  --t-2: 1.758rem;
+  --t-3: 2.197rem;
+  --t-4: clamp(2.4rem, 7vw, 4.3rem);
+
+  --gouttiere: clamp(1rem, 4vw, 2.5rem);
+}
+
+[data-ambiance='calme'] { --accent: #2f7d6d; --sur-accent: #ffffff; }
+[data-ambiance='rigolo'] { --accent: #f2b705; --sur-accent: #1b2340; }
+[data-ambiance='mystere'] { --accent: #5b3fa0; --sur-accent: #ffffff; }
+[data-ambiance='intrepide'] { --accent: #d7263d; --sur-accent: #ffffff; }
+[data-ambiance='reveur'] { --accent: #e58bb5; --sur-accent: #1b2340; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--papier);
+  color: var(--encre);
+  font-family: var(--texte);
+  font-size: var(--t-0);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--titre);
+  line-height: 1.1;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--encre);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.conteneur {
+  width: min(100% - 2 * var(--gouttiere), 68rem);
+  margin-inline: auto;
+}
+
+.lecture {
+  width: min(100% - 2 * var(--gouttiere), 40rem);
+  margin-inline: auto;
+}
+
+.visuellement-cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

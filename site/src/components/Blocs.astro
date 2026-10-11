@@ -1,0 +1,78 @@
+---
+// Affiche un champ "blocks" de Strapi (paragraphes, titres, listes, citations…)
+import { urlMedia } from '../lib/strapi.js';
+
+const { noeuds = [] } = Astro.props;
+
+const echapper = (texte) =>
+  texte.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const texteMisEnForme = (n) => {
+  let html = echapper(n.text).replace(/\n/g, '<br>');
+  if (n.code) html = `<code>${html}</code>`;
+  if (n.bold) html = `<strong>${html}</strong>`;
+  if (n.italic) html = `<em>${html}</em>`;
+  if (n.underline) html = `<u>${html}</u>`;
+  if (n.strikethrough) html = `<s>${html}</s>`;
+  return html;
+};
+---
+
+{
+  noeuds.map((n) => {
+    switch (n.type) {
+      case 'text':
+        return <Fragment set:html={texteMisEnForme(n)} />;
+      case 'link':
+        return (
+          <a href={n.url}>
+            <Astro.self noeuds={n.children} />
+          </a>
+        );
+      case 'paragraph':
+        return (
+          <p>
+            <Astro.self noeuds={n.children} />
+          </p>
+        );
+      case 'heading': {
+        const Titre = `h${Math.min(Math.max(n.level, 2), 4)}`;
+        return (
+          <Titre>
+            <Astro.self noeuds={n.children} />
+          </Titre>
+        );
+      }
+      case 'list': {
+        const Liste = n.format === 'ordered' ? 'ol' : 'ul';
+        return (
+          <Liste>
+            <Astro.self noeuds={n.children} />
+          </Liste>
+        );
+      }
+      case 'list-item':
+        return (
+          <li>
+            <Astro.self noeuds={n.children} />
+          </li>
+        );
+      case 'quote':
+        return (
+          <blockquote>
+            <Astro.self noeuds={n.children} />
+          </blockquote>
+        );
+      case 'code':
+        return (
+          <pre>
+            <code>{n.children?.map((c) => c.text).join('')}</code>
+          </pre>
+        );
+      case 'image':
+        return <img src={urlMedia(n.image)} alt={n.image?.alternativeText ?? ''} loading="lazy" />;
+      default:
+        return null;
+    }
+  })
+}
