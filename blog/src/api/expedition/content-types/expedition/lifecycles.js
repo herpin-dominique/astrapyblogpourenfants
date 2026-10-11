@@ -27,6 +27,14 @@ const texteDesEtapes = (etapes = []) =>
     })
     .join(' ');
 
+// Mots lus par minute selon l'âge. Dès 4 ans, c'est un adulte qui lit à voix
+// haute, lentement et avec des pauses ; à 7 ans l'enfant déchiffre encore.
+const MOTS_PAR_MINUTE = {
+  a_partir_de_4_ans: 100,
+  a_partir_de_7_ans: 70,
+  a_partir_de_10_ans: 130,
+};
+
 /**
  * Estime le temps de lecture d'une expédition, en minutes.
  *
@@ -35,8 +43,9 @@ const texteDesEtapes = (etapes = []) =>
  * @returns {number|null} minutes (au moins 1), ou null pour laisser le champ vide
  */
 const estimerTempsDeLecture = (nombreDeMots, age) => {
-  // TODO : à vous de jouer !
-  return null;
+  const vitesse = MOTS_PAR_MINUTE[age];
+  if (!vitesse || nombreDeMots === 0) return null;
+  return Math.max(1, Math.ceil(nombreDeMots / vitesse));
 };
 
 const calculer = (event) => {
