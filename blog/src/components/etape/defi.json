@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_etape_defis",
+  "info": {
+    "displayName": "Défi",
+    "icon": "rocket",
+    "description": "Une activité à faire en vrai, loin de l'écran"
+  },
+  "options": {},
+  "attributes": {
+    "titre": {
+      "type": "string",
+      "required": true
+    },
+    "consigne": {
+      "type": "blocks",
+      "required": true
+    },
+    "materiel": {
+      "type": "text"
+    },
+    "avecUnAdulte": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

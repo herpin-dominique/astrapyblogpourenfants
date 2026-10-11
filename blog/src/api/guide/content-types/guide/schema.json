@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guides",
+  "info": {
+    "singularName": "guide",
+    "pluralName": "guides",
+    "displayName": "Guide",
+    "description": "Le personnage qui accompagne l'enfant (remplace l'auteur)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nom": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "devise": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "expeditions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::expedition.expedition",
+      "mappedBy": "guide"
+    }
+  }
+}

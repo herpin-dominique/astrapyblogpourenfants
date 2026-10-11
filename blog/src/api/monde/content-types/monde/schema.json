@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "mondes",
+  "info": {
+    "singularName": "monde",
+    "pluralName": "mondes",
+    "displayName": "Monde",
+    "description": "Un territoire à explorer (remplace les catégories)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "nom": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "nom",
+      "required": true
+    },
+    "emoji": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "couleur": {
+      "type": "string",
+      "regex": "^#[0-9a-fA-F]{6}$"
+    },
+    "description": {
+      "type": "text"
+    },
+    "expeditions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::expedition.expedition",
+      "mappedBy": "monde"
+    }
+  }
+}

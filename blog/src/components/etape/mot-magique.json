@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_etape_mots_magiques",
+  "info": {
+    "displayName": "Mot magique",
+    "icon": "magic",
+    "description": "Un mot difficile expliqué simplement"
+  },
+  "options": {},
+  "attributes": {
+    "mot": {
+      "type": "string",
+      "required": true
+    },
+    "definition": {
+      "type": "text",
+      "required": true
+    },
+    "exemple": {
+      "type": "string"
+    }
+  }
+}

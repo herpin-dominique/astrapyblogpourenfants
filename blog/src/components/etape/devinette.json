@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_etape_devinettes",
+  "info": {
+    "displayName": "Devinette",
+    "icon": "question",
+    "description": "Une question dont la réponse se dévoile au clic"
+  },
+  "options": {},
+  "attributes": {
+    "question": {
+      "type": "text",
+      "required": true
+    },
+    "indice": {
+      "type": "string"
+    },
+    "reponse": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

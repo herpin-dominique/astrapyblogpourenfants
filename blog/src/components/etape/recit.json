@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_etape_recits",
+  "info": {
+    "displayName": "Récit",
+    "icon": "feather",
+    "description": "Un passage de l'histoire"
+  },
+  "options": {},
+  "attributes": {
+    "texte": {
+      "type": "blocks",
+      "required": true
+    }
+  }
+}

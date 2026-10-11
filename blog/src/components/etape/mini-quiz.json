@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_etape_mini_quizzes",
+  "info": {
+    "displayName": "Mini-quiz",
+    "icon": "puzzle",
+    "description": "Une question à choix multiples"
+  },
+  "options": {},
+  "attributes": {
+    "question": {
+      "type": "string",
+      "required": true
+    },
+    "choix": {
+      "type": "component",
+      "repeatable": true,
+      "component": "quiz.choix",
+      "min": 2,
+      "max": 4
+    },
+    "explication": {
+      "type": "text"
+    }
+  }
+}

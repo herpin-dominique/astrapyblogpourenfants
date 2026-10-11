@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_etape_illustrations",
+  "info": {
+    "displayName": "Illustration",
+    "icon": "picture",
+    "description": "Une image avec sa légende"
+  },
+  "options": {},
+  "attributes": {
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "legende": {
+      "type": "string"
+    },
+    "texteAlternatif": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
