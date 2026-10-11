@@ -6,6 +6,9 @@ import { urlMedia } from '../lib/strapi.js';
 const { etape, numero } = Astro.props;
 const type = etape.__component;
 
+// Les étapes qui rapportent des étoiles
+const interactif = ['etape.devinette', 'etape.mini-quiz', 'etape.defi'].includes(type);
+
 const NOMS = {
   'etape.recit': 'Récit',
   'etape.devinette': 'Devinette',
@@ -16,9 +19,12 @@ const NOMS = {
 };
 ---
 
-<li class="etape" data-type={type}>
+<li class="etape" data-type={type} data-numero={numero} data-interactif={interactif ? '' : undefined}>
   <span class="borne" aria-hidden="true">{numero}</span>
-  <p class="nature"><span class="visuellement-cache">Étape {numero} : </span>{NOMS[type] ?? 'Étape'}</p>
+  <p class="nature">
+    <span class="visuellement-cache">Étape {numero} : </span>{NOMS[type] ?? 'Étape'}
+    {interactif && <span class="gain" aria-live="polite" />}
+  </p>
 
   {
     type === 'etape.recit' && (
@@ -38,9 +44,14 @@ const NOMS = {
             <p>{etape.indice}</p>
           </details>
         )}
-        <details class="reponse">
+        <details class="reponse" data-devinette>
           <summary>Voir la réponse</summary>
           <p>{etape.reponse}</p>
+          <div class="bilan">
+            <p>Tu avais trouvé&nbsp;?</p>
+            <button type="button" data-trouve="oui">Oui, je l’avais trouvée&nbsp;!</button>
+            <button type="button" data-trouve="non">Pas cette fois</button>
+          </div>
         </details>
       </div>
     )
@@ -88,6 +99,9 @@ const NOMS = {
             <strong>Il te faut :</strong> {etape.materiel}
           </p>
         )}
+        <button type="button" class="releve" data-defi>
+          J’ai relevé le défi&nbsp;!
+        </button>
       </div>
     )
   }
@@ -103,19 +117,67 @@ const NOMS = {
 </li>
 
 <script>
-  // Mini-quiz : on colore la réponse choisie et on montre l'explication
+  import { lireCarnet, noterEtape, etoilesPourLeQuiz } from '../lib/carnet.js';
+
+  const slug = document.querySelector('[data-slug]')?.dataset.slug;
+  const etoiles = (n) => '★'.repeat(n);
+
+  // Affiche ce que l'étape a rapporté et la marque comme faite
+  const afficherGain = (etape, n) => {
+    etape.dataset.faite = '';
+    etape.querySelector('.gain').textContent = n > 0 ? `${etoiles(n)} gagnée${n > 1 ? 's' : ''}` : 'Fait';
+    const defi = etape.querySelector('[data-defi]');
+    if (defi) {
+      defi.disabled = true;
+      defi.textContent = 'Défi relevé';
+    }
+    etape.querySelector('.bilan')?.remove();
+  };
+
+  const valider = (etape, n) => {
+    const { nouvelles } = noterEtape(slug, Number(etape.dataset.numero), n);
+    // Si l'étape avait déjà été réussie, on garde le premier résultat
+    if (nouvelles > 0 || !('faite' in etape.dataset)) afficherGain(etape, nouvelles > 0 ? nouvelles : n);
+  };
+
+  // Au retour sur la page : on remet les étapes déjà réussies
+  const dejaFaites = lireCarnet().expeditions[slug]?.etapes ?? {};
+  for (const etape of document.querySelectorAll('[data-interactif]')) {
+    const n = dejaFaites[etape.dataset.numero];
+    if (n !== undefined) afficherGain(etape, n);
+  }
+
+  // Devinette : l'enfant dit lui-même s'il avait trouvé (on lui fait confiance)
+  for (const bilan of document.querySelectorAll('.bilan')) {
+    bilan.addEventListener('click', (e) => {
+      const bouton = e.target.closest('button');
+      if (bouton) valider(bilan.closest('.etape'), bouton.dataset.trouve === 'oui' ? 1 : 0);
+    });
+  }
+
+  // Mini-quiz : on colore la réponse choisie, 2 étoiles du premier coup, 1 ensuite
   for (const quiz of document.querySelectorAll('[data-quiz]')) {
     const verdict = quiz.querySelector('.verdict');
     const explication = quiz.querySelector('.explication');
+    let essais = 0;
     quiz.addEventListener('click', (e) => {
       const bouton = e.target.closest('button');
       if (!bouton) return;
+      essais += 1;
       const bon = bouton.dataset.bon === 'oui';
       for (const b of quiz.querySelectorAll('button')) b.removeAttribute('data-etat');
       bouton.dataset.etat = bon ? 'bon' : 'rate';
       verdict.textContent = bon ? 'Bravo, c’est la bonne réponse !' : 'Pas tout à fait… essaie encore !';
-      if (explication && bon) explication.hidden = false;
+      if (bon) {
+        if (explication) explication.hidden = false;
+        valider(quiz.closest('.etape'), etoilesPourLeQuiz(essais));
+      }
     });
+  }
+
+  // Défi
+  for (const bouton of document.querySelectorAll('[data-defi]')) {
+    bouton.addEventListener('click', () => valider(bouton.closest('.etape'), 1));
   }
 </script>
 
@@ -158,6 +220,65 @@ const NOMS = {
     font-weight: 500;
     color: var(--encre-douce);
     margin: 0.45rem 0 0.75rem;
+  }
+
+  /* Étoiles gagnées, à côté du nom de l'étape */
+  .gain {
+    margin-left: 0.6rem;
+    font-weight: 800;
+    color: var(--encre);
+  }
+
+  .gain:empty {
+    display: none;
+  }
+
+  /* Une étape réussie : la borne devient pleine d'encre */
+  .etape[data-faite] .borne {
+    background: var(--encre);
+    color: var(--papier);
+  }
+
+  .bilan {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .bilan p {
+    width: 100%;
+    margin: 0;
+    font-size: var(--t-0);
+    font-weight: 700;
+  }
+
+  .bilan button,
+  .releve {
+    font: inherit;
+    font-weight: 700;
+    padding: 0.55rem 1.1rem;
+    border: 2px solid var(--encre);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--encre);
+    cursor: pointer;
+  }
+
+  .bilan button:hover {
+    background: var(--papier-fonce);
+  }
+
+  .releve {
+    margin-top: 1.25rem;
+    border-color: var(--sur-accent);
+  }
+
+  .releve:disabled {
+    cursor: default;
+    background: transparent;
+    color: var(--sur-accent);
   }
 
   .question {

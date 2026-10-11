@@ -1,0 +1,114 @@
+---
+import Base from '../layouts/Base.astro';
+import Tampon from '../components/Tampon.astro';
+import { listerMondes } from '../lib/strapi.js';
+
+const mondes = await listerMondes().catch(() => []);
+---
+
+<Base titre="Mon carnet">
+  <section class="conteneur">
+    <h1>Mon carnet</h1>
+    <p class="bilan" aria-live="polite" data-bilan data-mondes={mondes.length}>
+      Ton carnet est encore vide. Pars en expédition pour gagner tes premières étoiles&nbsp;!
+    </p>
+
+    <ul class="tampons">
+      {
+        mondes.map((m) => (
+          <li>
+            <a href={`/monde/${m.slug}`}>
+              <Tampon monde={m} data-verrouille="" data-monde={m.slug} />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="aide">
+      Termine toutes les étapes d’une expédition pour gagner le tampon de son monde. Ton carnet est gardé sur cet
+      appareil, dans ce navigateur.
+    </p>
+
+    <button type="button" class="effacer" data-effacer>Recommencer mon carnet à zéro</button>
+  </section>
+</Base>
+
+<script>
+  import { lireCarnet, etoilesTotales, mondesTamponnes, effacerCarnet } from '../lib/carnet.js';
+
+  const afficher = () => {
+    const carnet = lireCarnet();
+    const gagnes = mondesTamponnes(carnet);
+    const etoiles = etoilesTotales(carnet);
+    const bilan = document.querySelector('[data-bilan]');
+    const s = (n) => (n > 1 ? 's' : '');
+    if (etoiles > 0 || gagnes.size > 0) {
+      bilan.innerHTML = `<strong>${etoiles}</strong> étoile${s(etoiles)} ★ et <strong>${gagnes.size}</strong> tampon${s(gagnes.size)} sur ${bilan.dataset.mondes}.`;
+    } else {
+      bilan.textContent = 'Ton carnet est encore vide. Pars en expédition pour gagner tes premières étoiles !';
+    }
+    for (const tampon of document.querySelectorAll('[data-monde]')) {
+      tampon.toggleAttribute('data-verrouille', !gagnes.has(tampon.dataset.monde));
+    }
+  };
+
+  afficher();
+  document.addEventListener('carnet:maj', afficher);
+
+  document.querySelector('[data-effacer]').addEventListener('click', () => {
+    if (confirm('Effacer toutes tes étoiles et tous tes tampons ?')) effacerCarnet();
+  });
+</script>
+
+<style>
+  h1 {
+    font-size: var(--t-4);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 2rem;
+  }
+
+  .bilan {
+    margin-top: 1rem;
+    font-size: var(--t-1);
+  }
+
+  .bilan :global(strong) {
+    font-family: var(--titre);
+    font-weight: 800;
+  }
+
+  .tampons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 2rem 1.5rem;
+    justify-items: center;
+    margin: 3rem 0;
+    padding: 2.5rem 1.5rem;
+    border: 2px dashed var(--trait);
+    border-radius: 18px;
+    list-style: none;
+  }
+
+  .tampons a {
+    text-decoration: none;
+    border-radius: 50%;
+  }
+
+  .aide {
+    max-width: 38rem;
+    color: var(--encre-douce);
+  }
+
+  .effacer {
+    margin-top: 1rem;
+    font: inherit;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--encre-douce);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--encre-douce);
+    cursor: pointer;
+  }
+</style>

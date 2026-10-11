@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Etape from '../../components/Etape.astro';
 import Billet from '../../components/Billet.astro';
+import Tampon from '../../components/Tampon.astro';
 import { listerExpeditions, trouverExpedition, AGES, AMBIANCES, urlMedia } from '../../lib/strapi.js';
 
 // Une page par expédition publiée
@@ -75,11 +76,23 @@ const voisines = monde
         )
       }
 
-      <ol class="sentier">
+      <ol class="sentier" data-slug={expedition.slug} data-monde={monde?.slug}>
         {etapes.map((etape, i) => <Etape etape={etape} numero={i + 1} />)}
         <li class="arrivee">
-          <span class="drapeau" aria-hidden="true">⚑</span>
-          <p>Expédition terminée, bravo&nbsp;!</p>
+          <div class="ligne">
+            <span class="drapeau" aria-hidden="true">⚑</span>
+            <p class="consigne">Réussis les étapes pour gagner le tampon de ce monde.</p>
+          </div>
+          {
+            monde && (
+              <div class="recompense" hidden aria-live="polite">
+                <Tampon monde={monde} />
+                <p>
+                  Expédition terminée, bravo&nbsp;! Le tampon {monde.nom} est dans <a href="/carnet">ton carnet</a>.
+                </p>
+              </div>
+            )
+          }
         </li>
       </ol>
     </div>
@@ -96,6 +109,29 @@ const voisines = monde
     }
   </article>
 </Base>
+
+<script>
+  import { lireCarnet, marquerTerminee } from '../../lib/carnet.js';
+
+  const sentier = document.querySelector('[data-slug]');
+  const { slug, monde } = sentier.dataset;
+  const aFaire = [...sentier.querySelectorAll('[data-interactif]')].map((e) => e.dataset.numero);
+
+  // Quand toutes les étapes à étoiles sont faites, le tampon du monde apparaît
+  const verifier = (avecEffet) => {
+    const faites = lireCarnet().expeditions[slug]?.etapes ?? {};
+    if (!aFaire.every((n) => n in faites)) return;
+    marquerTerminee(slug, monde);
+    const recompense = sentier.querySelector('.recompense');
+    if (!recompense || !recompense.hidden) return;
+    recompense.hidden = false;
+    sentier.querySelector('.consigne').hidden = true;
+    if (avecEffet) recompense.querySelector('.tampon').classList.add('pose');
+  };
+
+  verifier(false);
+  document.addEventListener('carnet:maj', () => verifier(true));
+</script>
 
 <style>
   .ouverture {
@@ -205,17 +241,32 @@ const voisines = monde
     list-style: none;
   }
 
-  .arrivee {
+  .ligne {
     display: flex;
     align-items: center;
     gap: 1rem;
-    font-family: var(--titre);
-    font-weight: 800;
-    font-size: var(--t-2);
   }
 
-  .arrivee p {
+  .consigne {
     margin: 0;
+    color: var(--encre-douce);
+  }
+
+  .recompense {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0 0 4rem;
+  }
+
+  .recompense p {
+    flex: 1 1 14rem;
+    margin: 0;
+    font-family: var(--titre);
+    font-weight: 800;
+    font-size: var(--t-1);
+    line-height: 1.3;
   }
 
   .drapeau {

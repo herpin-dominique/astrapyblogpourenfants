@@ -1,0 +1,67 @@
+---
+// Le tampon d'un monde, comme sur un passeport de voyageur
+const { monde, ...attributs } = Astro.props;
+---
+
+<div class="tampon" style={monde.couleur ? `--encre-tampon: ${monde.couleur}` : undefined} {...attributs}>
+  <span class="emoji" aria-hidden="true">{monde.emoji}</span>
+  <span class="nom">{monde.nom}</span>
+</div>
+
+<style>
+  .tampon {
+    --encre-tampon: var(--encre);
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 0.2rem;
+    width: 9rem;
+    aspect-ratio: 1;
+    padding: 1rem;
+    border: 4px double var(--encre-tampon);
+    border-radius: 50%;
+    color: var(--encre-tampon);
+    text-align: center;
+    rotate: -8deg;
+    font-family: var(--titre);
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .emoji {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+
+  /* Pas encore gagné : le tampon n'est qu'une silhouette */
+  .tampon[data-verrouille] {
+    border-style: dashed;
+    border-width: 3px;
+    border-color: var(--trait);
+    color: var(--trait);
+    rotate: 0deg;
+  }
+
+  .tampon[data-verrouille] .emoji {
+    filter: grayscale(1);
+    opacity: 0.35;
+  }
+
+  /* Le coup de tampon, au moment où l'expédition se termine */
+  .tampon.pose {
+    animation: coup-de-tampon 450ms cubic-bezier(0.3, 1.6, 0.6, 1);
+  }
+
+  @keyframes coup-de-tampon {
+    from {
+      scale: 1.8;
+      rotate: 6deg;
+      opacity: 0;
+    }
+    to {
+      scale: 1;
+      rotate: -8deg;
+      opacity: 1;
+    }
+  }
+</style>
